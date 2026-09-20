@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KOBİ Teklif & Talep Yönetim Paneli</title>
+    <style>
+        :root {
+            --primary: #0284c7;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --border: #e2e8f0;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --success: #16a34a;
+            --warning: #f59e0b;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        body { background: var(--bg); color: var(--text-main); padding: 24px; }
+        .container { max-width: 1240px; margin: 0 auto; }
+
+        .topbar {
+            display: flex; justify-content: space-between; align-items: center;
+            background: white; padding: 20px 24px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 24px;
+        }
+        .topbar h1 { font-size: 1.35rem; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 8px; }
+
+        /* Stats */
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+        .stat-card {
+            background: white; border: 1px solid var(--border); border-radius: 10px; padding: 18px;
+            display: flex; flex-direction: column; gap: 6px;
+        }
+        .stat-title { font-size: 0.8rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; }
+        .stat-value { font-size: 1.7rem; font-weight: 800; color: #0f172a; }
+
+        /* Table */
+        .table-card { background: white; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+        .table-header {
+            padding: 16px 20px; border-bottom: 1px solid var(--border); background: #fafafa;
+            display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;
+        }
+        .search-input {
+            padding: 8px 14px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.85rem; width: 300px; outline: none;
+        }
+        .btn {
+            padding: 8px 14px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer;
+            border: 1px solid var(--border); background: white; color: #334155; display: inline-flex; align-items: center; gap: 6px;
+        }
+        .btn:hover { background: #f1f5f9; }
+        .btn-primary { background: var(--primary); color: white; border: none; }
+        .btn-primary:hover { background: #0369a1; }
+
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.86rem; }
+        th { background: #f8fafc; padding: 12px 16px; border-bottom: 1px solid var(--border); color: #475569; font-weight: 600; }
+        td { padding: 14px 16px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+        tr:hover { background: #f8fafc; }
+
+        .badge {
+            display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 0.75rem; font-weight: 700;
+        }
+        .badge-new { background: #e0f2fe; color: #0369a1; }
+        .badge-quoted { background: #fef3c7; color: #92400e; }
+        .badge-sold { background: #dcfce7; color: #166534; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="topbar">
+        <h1>💼 KOBİ Fiyat Teklifleri ve Talep Portalı</h1>
+        <div style="display: flex; gap: 10px;">
+            <a href="index.html" class="btn" target="_blank">🌐 Teklif Formunu Aç</a>
+            <button class="btn btn-primary" onclick="exportCsv()">📥 CSV İndir</button>
+        </div>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <span class="stat-title">Toplam Teklif Talebi</span>
+            <span class="stat-value" id="statTotal">0</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-title">İncelenen / Bekleyen</span>
+            <span class="stat-value" id="statPending" style="color: var(--warning);">0</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-title">Satışa Dönen (Kazanılan)</span>
+            <span class="stat-value" id="statSold" style="color: var(--success);">0</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-title">Toplam Potansiyel Ciro</span>
+            <span class="stat-value" id="statRevenue" style="color: var(--primary);">0,00 TL</span>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-card">
+        <div class="table-header">
+            <input type="text" class="search-input" id="searchBox" placeholder="Firma Adı, Teklif No veya Yetkili ara..." oninput="filterTable()">
+            <span style="font-size: 0.82rem; color: var(--text-muted);">Durum güncellemesi için tablodan seçim yapabilirsiniz.</span>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Teklif No</th>
+                    <th>Firma Unvanı</th>
+                    <th>Yetkili & İletişim</th>
+                    <th>Seçilen Paket</th>
+                    <th>Miktar</th>
+                    <th>Toplam Tutar</th>
+                    <th>Durum</th>
+                    <th>İşlem</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+let quotes = [];
+
+async function loadQuotes() {
+    try {
+        const res = await fetch('/api/teklif-listesi');
+        if (res.ok) {
+            quotes = await res.json();
+        }
+    } catch (e) {
+        quotes = JSON.parse(localStorage.getItem('kobi_quotes') || '[]');
+    }
+
+    if (quotes.length === 0) {
+        quotes = [
+            {
+                quote_no: "TEKLIF-2026-4819",
+                company_name: "Hedef İnşaat Taahhüt Ltd. Şti.",
+                contact_name: "Kemal Yurt",
+                email: "kemal@hedefinsaat.com.tr",
+                phone: "0533 444 55 66",
+                product_name: "E-İmza & USB Token (3 Yıllık Lisans)",
+                qty: 5,
+                grand_total: 13965.00,
+                status: "Yeni Talep",
+                created_at: new Date().toISOString()
+            },
+            {
+                quote_no: "TEKLIF-2026-7821",
+                company_name: "Nova Lojistik A.Ş.",
+                contact_name: "Selin Erdem",
+                email: "selin@novalojistik.com",
+                phone: "0542 987 65 43",
+                product_name: "Mali Mühür & e-Defter Donanım Paketi",
+                qty: 2,
+                grand_total: 10944.00,
+                status: "Satışa Döndü",
+                created_at: new Date(Date.now() - 2 * 86400000).toISOString()
+            }
+        ];
+        localStorage.setItem('kobi_quotes', JSON.stringify(quotes));
+    }
+
+    renderTable(quotes);
+    updateStats();
+}
+
+function renderTable(data) {
+    const tbody = document.getElementById('tableBody');
+    tbody.innerHTML = '';
+
+    data.forEach((q, idx) => {
+        let badgeClass = 'badge-new';
+        if (q.status === 'Satışa Döndü') badgeClass = 'badge-done';
+        if (q.status === 'Teklif İletildi') badgeClass = 'badge-quoted';
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><b>${q.quote_no}</b></td>
+            <td>${q.company_name}</td>
+            <td>${q.contact_name}<br><small style="color:#64748b;">${q.phone}</small></td>
+            <td>${q.product_name}</td>
+            <td>${q.qty} Adet</td>
+            <td><b>${Number(q.grand_total).toLocaleString('tr-TR', {minimumFractionDigits: 2})} TL</b></td>
+            <td>
+                <select onchange="updateStatus(${idx}, this.value)" style="padding: 4px 8px; border-radius:6px; border:1px solid #cbd5e1; font-size:0.78rem;">
+                    <option value="Yeni Talep" ${q.status === 'Yeni Talep' ? 'selected' : ''}>Yeni Talep</option>
+                    <option value="Teklif İletildi" ${q.status === 'Teklif İletildi' ? 'selected' : ''}>Teklif İletildi</option>
+                    <option value="Satışa Döndü" ${q.status === 'Satışa Döndü' ? 'selected' : ''}>Satışa Döndü</option>
+                    <option value="İptal" ${q.status === 'İptal' ? 'selected' : ''}>İptal</option>
+                </select>
+            </td>
+            <td>
+                <button class="btn" style="padding: 4px 8px; font-size: 0.78rem;" onclick="openWa('${q.phone}', '${q.quote_no}', '${q.company_name}')">💬 WhatsApp</button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+function updateStatus(idx, newStatus) {
+    quotes[idx].status = newStatus;
+    localStorage.setItem('kobi_quotes', JSON.stringify(quotes));
+    updateStats();
+}
+
+function openWa(phone, quoteNo, company) {
+    const cleanPhone = phone.replace(/[^0-9]/g, '');
+    const msg = encodeURIComponent(`Merhaba, ${company} adına ${quoteNo} numaralı fiyat teklifiniz ile ilgili satış departmanından yazıyorum.`);
+    window.open(`https://wa.me/${cleanPhone}?text=${msg}`, '_blank');
+}
+
+function updateStats() {
+    document.getElementById('statTotal').innerText = quotes.length;
+    let pending = 0, sold = 0, rev = 0;
+    quotes.forEach(q => {
+        if (q.status === 'Satışa Döndü') sold++;
+        else if (q.status !== 'İptal') pending++;
+        rev += Number(q.grand_total) || 0;
+    });
+    document.getElementById('statPending').innerText = pending;
+    document.getElementById('statSold').innerText = sold;
+    document.getElementById('statRevenue').innerText = `${rev.toLocaleString('tr-TR', {minimumFractionDigits: 2})} TL`;
+}
+
+function filterTable() {
+    const q = document.getElementById('searchBox').value.toLowerCase().trim();
+    const filtered = quotes.filter(item => 
+        item.company_name.toLowerCase().includes(q) ||
+        item.quote_no.toLowerCase().includes(q) ||
+        item.contact_name.toLowerCase().includes(q)
+    );
+    renderTable(filtered);
+}
+
+function exportCsv() {
+    let csv = "Teklif No,Firma,Yetkili,Telefon,Eposta,Urun,Miktar,Tutar,Durum\n";
+    quotes.forEach(q => {
+        csv += `"${q.quote_no}","${q.company_name}","${q.contact_name}","${q.phone}","${q.email}","${q.product_name}","${q.qty}","${q.grand_total}","${q.status}"\n`;
+    });
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "kobi_teklif_talepleri.csv";
+    link.click();
+}
+
+window.onload = loadQuotes;
+</script>
+
+</body>
+</html>

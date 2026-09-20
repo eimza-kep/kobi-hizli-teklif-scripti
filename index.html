@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>B2B Kurumsal Fiyat Teklifi ve Talep Formu | KOBİ Teklif Portalı</title>
+    <style>
+        :root {
+            --primary: #0284c7;
+            --primary-hover: #0369a1;
+            --secondary: #0f172a;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --border: #e2e8f0;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --success: #16a34a;
+            --accent: #f59e0b;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+        body { background: var(--bg); color: var(--text-main); line-height: 1.5; padding: 32px 16px; min-height: 100vh; }
+
+        .container { max-width: 960px; margin: 0 auto; }
+
+        /* Header */
+        .header {
+            text-align: center; margin-bottom: 28px; background: white; padding: 28px;
+            border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        }
+        .header-badge {
+            display: inline-block; background: #e0f2fe; color: var(--primary);
+            font-size: 0.78rem; font-weight: 700; padding: 4px 12px; border-radius: 999px; margin-bottom: 10px;
+        }
+        .header h1 { font-size: 1.6rem; color: var(--secondary); margin-bottom: 8px; font-weight: 800; }
+        .header p { font-size: 0.92rem; color: var(--text-muted); max-width: 650px; margin: 0 auto; }
+
+        /* Layout */
+        .grid-layout { display: grid; grid-template-columns: 1.6fr 1fr; gap: 24px; align-items: start; }
+
+        .card {
+            background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px;
+            padding: 24px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+        }
+        .card-title {
+            font-size: 1.05rem; font-weight: 700; color: var(--secondary); margin-bottom: 16px;
+            display: flex; align-items: center; gap: 8px; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px;
+        }
+
+        /* Products Selector */
+        .product-option {
+            display: flex; justify-content: space-between; align-items: center; padding: 12px 16px;
+            border: 1px solid var(--border); border-radius: 8px; margin-bottom: 10px; background: #f8fafc;
+            cursor: pointer; transition: all 0.15s;
+        }
+        .product-option:hover { background: #f1f5f9; border-color: #cbd5e1; }
+        .product-option.selected { border-color: var(--primary); background: #f0f9ff; }
+        .product-info { display: flex; flex-direction: column; gap: 2px; }
+        .product-name { font-weight: 700; font-size: 0.92rem; color: var(--secondary); }
+        .product-sub { font-size: 0.75rem; color: var(--text-muted); }
+        .product-price { font-weight: 800; color: var(--primary); font-size: 0.95rem; }
+
+        .qty-row { display: flex; justify-content: space-between; align-items: center; margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--border); }
+        .qty-controls { display: flex; align-items: center; gap: 8px; }
+        .btn-qty { width: 32px; height: 32px; border-radius: 6px; border: 1px solid var(--border); background: white; font-weight: bold; cursor: pointer; }
+        .qty-input { width: 60px; text-align: center; font-weight: 700; padding: 6px; border: 1px solid var(--border); border-radius: 6px; }
+
+        /* Form Inputs */
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+        .form-group { display: flex; flex-direction: column; gap: 6px; }
+        .form-group.full { grid-column: span 2; }
+        label { font-size: 0.82rem; font-weight: 600; color: #334155; }
+        input, select, textarea {
+            width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px;
+            font-size: 0.88rem; outline: none; background: #f8fafc;
+        }
+        input:focus, select:focus, textarea:focus { border-color: var(--primary); background: white; }
+        textarea { min-height: 80px; resize: vertical; }
+
+        /* Summary Sticky Box */
+        .summary-box {
+            position: sticky; top: 20px; background: white; border: 1px solid var(--border);
+            border-radius: 12px; padding: 24px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        }
+        .summary-title { font-size: 1.1rem; font-weight: 800; color: var(--secondary); margin-bottom: 16px; }
+        .summary-item { display: flex; justify-content: space-between; font-size: 0.88rem; margin-bottom: 10px; color: #475569; }
+        .summary-total {
+            display: flex; justify-content: space-between; font-size: 1.25rem; font-weight: 800;
+            color: var(--secondary); padding-top: 14px; border-top: 2px solid var(--border); margin-top: 14px;
+        }
+
+        .btn-submit {
+            width: 100%; background: var(--primary); color: white; border: none; padding: 14px;
+            border-radius: 8px; font-weight: 700; font-size: 1rem; cursor: pointer; margin-top: 18px;
+            transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .btn-submit:hover { background: var(--primary-hover); }
+
+        /* Proforma Preview View */
+        .proforma-view {
+            display: none; background: white; border: 2px solid #38bdf8; border-radius: 12px;
+            padding: 36px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.08); margin-top: 20px;
+        }
+        .proforma-header {
+            display: flex; justify-content: space-between; border-bottom: 2px solid var(--secondary);
+            padding-bottom: 16px; margin-bottom: 24px;
+        }
+        .proforma-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        .proforma-table th { background: #f1f5f9; padding: 10px; border: 1px solid var(--border); text-align: left; font-size: 0.85rem; }
+        .proforma-table td { padding: 12px 10px; border: 1px solid var(--border); font-size: 0.9rem; }
+
+        .btn-wa {
+            background: #25D366; color: white; padding: 12px 20px; border-radius: 8px;
+            font-weight: 700; font-size: 0.92rem; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; border: none; cursor: pointer;
+        }
+        .btn-wa:hover { background: #22bf5b; }
+
+        @media (max-width: 768px) {
+            .grid-layout { grid-template-columns: 1fr; }
+            .form-grid { grid-template-columns: 1fr; }
+            .form-group.full { grid-column: span 1; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Header -->
+    <div class="header">
+        <div class="header-badge">KURUMSAL B2B TEKLİF PLATFORMU</div>
+        <h1>Hızlı Fiyat Teklifi ve Talep Formu</h1>
+        <p>
+            İhtiyacınız olan kurumsal ürün veya hizmet paketlerini seçin; anında tahmini bütçenizi görün ve yetkili satış temsilcimizden resmi proforma teklifinizi alın.
+        </p>
+    </div>
+
+    <!-- Main Grid Form -->
+    <form id="quoteForm" onsubmit="submitQuote(event)">
+        <div class="grid-layout">
+            <!-- Left Side: Selection & Form -->
+            <div>
+                <!-- 1. Ürün & Hizmet Seçimi -->
+                <div class="card">
+                    <h2 class="card-title">📦 1. Ürün / Hizmet Paketi Seçimi</h2>
+                    
+                    <div class="product-option selected" onclick="selectProduct(this, 1, 2450, 'E-İmza & USB Token (3 Yıllık Lisans)')">
+                        <div class="product-info">
+                            <span class="product-name">E-İmza & USB Token Donanımı</span>
+                            <span class="product-sub">3 Yıllık Nitelikli Elektronik Sertifika (NES) + Akıllı Kart</span>
+                        </div>
+                        <span class="product-price">2.450,00 TL</span>
+                    </div>
+
+                    <div class="product-option" onclick="selectProduct(this, 2, 4800, 'Mali Mühür & e-Defter Donanım Paketi')">
+                        <div class="product-info">
+                            <span class="product-name">Mali Mühür & e-Defter Paketi</span>
+                            <span class="product-sub">Tüzel Şirketler İçin Kurumsal Mali Mühür Sertifikası (Kamu SM Uyumlu)</span>
+                        </div>
+                        <span class="product-price">4.800,00 TL</span>
+                    </div>
+
+                    <div class="product-option" onclick="selectProduct(this, 3, 3500, 'Kurumsal KEP (Kayıtlı E-Posta) Entegrasyonu')">
+                        <div class="product-info">
+                            <span class="product-name">Kurumsal KEP Paketi</span>
+                            <span class="product-sub">1 Yıllık KEP Adresi + 250 Kontör + e-Tebligat Takip Modülü</span>
+                        </div>
+                        <span class="product-price">3.500,00 TL</span>
+                    </div>
+
+                    <div class="product-option" onclick="selectProduct(this, 4, 7500, 'E-Dönüşüm ERP & Muhasebe API Entegrasyonu')">
+                        <div class="product-info">
+                            <span class="product-name">Özel ERP & Muhasebe Entegrasyonu</span>
+                            <span class="product-sub">GİB e-Fatura / e-Arşiv UBL-TR Otomasyon Kurulumu</span>
+                        </div>
+                        <span class="product-price">7.500,00 TL</span>
+                    </div>
+
+                    <div class="qty-row">
+                        <span style="font-weight: 600; font-size: 0.88rem;">Talep Edilen Miktar (Adet / Lisans):</span>
+                        <div class="qty-controls">
+                            <button type="button" class="btn-qty" onclick="changeQty(-1)">-</button>
+                            <input type="number" id="qtyInput" class="qty-input" value="1" min="1" max="1000" oninput="updateCalculation()">
+                            <button type="button" class="btn-qty" onclick="changeQty(1)">+</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Şirket & İletişim Bilgileri -->
+                <div class="card">
+                    <h2 class="card-title">🏢 2. Şirket ve Yetkili İletişim Bilgileri</h2>
+                    <div class="form-grid">
+                        <div class="form-group full">
+                            <label>Firma Ticari Unvanı <span style="color:red">*</span></label>
+                            <input type="text" id="companyName" required placeholder="Örn: Atlas Teknoloji Anonim Şirketi">
+                        </div>
+                        <div class="form-group">
+                            <label>Vergi Kimlik No (VKN) / TCKN <span style="color:red">*</span></label>
+                            <input type="text" id="vkn" required placeholder="10 haneli VKN veya 11 haneli TCKN">
+                        </div>
+                        <div class="form-group">
+                            <label>Yetkili Adı Soyadı <span style="color:red">*</span></label>
+                            <input type="text" id="contactName" required placeholder="Adınız ve Soyadınız">
+                        </div>
+                        <div class="form-group">
+                            <label>Kurumsal E-Posta <span style="color:red">*</span></label>
+                            <input type="email" id="email" required placeholder="iletisim@sirketiniz.com">
+                        </div>
+                        <div class="form-group">
+                            <label>Telefon / WhatsApp Numarası <span style="color:red">*</span></label>
+                            <input type="tel" id="phone" required placeholder="05XX XXX XX XX">
+                        </div>
+                        <div class="form-group">
+                            <label>Şehir <span style="color:red">*</span></label>
+                            <input type="text" id="city" required placeholder="Örn: İstanbul">
+                        </div>
+                        <div class="form-group">
+                            <label>Vade / Ödeme Tercihi</label>
+                            <select id="paymentTerm" onchange="updateCalculation()">
+                                <option value="pesin">Peşin / Havale (%5 Ekstra İskonto)</option>
+                                <option value="kredikarti">Kredi Kartı Tek Çekim</option>
+                                <option value="taksit">Kredi Kartına 3 Taksit</option>
+                                <option value="vadeli">30 Gün Cari Vade</option>
+                            </select>
+                        </div>
+                        <div class="form-group full">
+                            <label>Özel Talepler / Açıklama</label>
+                            <textarea id="notes" placeholder="Toplu alım şartları, kurulum takvimi veya ek şartlarınızı yazabilirsiniz..."></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Side: Sticky Summary Box -->
+            <div>
+                <div class="summary-box">
+                    <h3 class="summary-title">📊 Fiyat Teklifi Özeti</h3>
+                    <div class="summary-item">
+                        <span>Seçilen Paket:</span>
+                        <b id="summaryProductName">E-İmza & USB Token (3 Yıllık)</b>
+                    </div>
+                    <div class="summary-item">
+                        <span>Birim Fiyat:</span>
+                        <span id="summaryUnitPrice">2.450,00 TL</span>
+                    </div>
+                    <div class="summary-item">
+                        <span>Miktar:</span>
+                        <span id="summaryQty">1 Adet</span>
+                    </div>
+                    <div class="summary-item">
+                        <span>Ara Toplam (KDV Hariç):</span>
+                        <span id="summarySubtotal">2.450,00 TL</span>
+                    </div>
+                    <div class="summary-item" id="discountRow" style="color: var(--success); display: none;">
+                        <span>Peşin Havale İndirimi (%5):</span>
+                        <span id="summaryDiscount">-0,00 TL</span>
+                    </div>
+                    <div class="summary-item">
+                        <span>Hesaplanan KDV (%20):</span>
+                        <span id="summaryVat">490,00 TL</span>
+                    </div>
+                    <div class="summary-total">
+                        <span>Genel Toplam:</span>
+                        <span id="summaryGrandTotal" style="color: var(--primary);">2.940,00 TL</span>
+                    </div>
+
+                    <button type="submit" class="btn-submit" id="submitBtn">
+                        <span>📄 Teklif Talep Et & Proforma Al</span>
+                    </button>
+                    <p style="font-size: 0.72rem; color: #94a3b8; text-align: center; margin-top: 10px;">
+                        *Belirtilen fiyatlar gösterge niteliğinde olup bağlayıcı teklif müşteri temsilcimizce onaylanacaktır.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <!-- Proforma Preview Box -->
+    <div class="proforma-view" id="proformaView">
+        <div class="proforma-header">
+            <div>
+                <h2 style="font-size: 1.5rem; color: var(--secondary); font-weight: 800;">PROFORMA FİYAT TEKLİFİ</h2>
+                <span style="font-size: 0.85rem; color: #64748b;">Teklif No: <b id="proformaNo">TEKLIF-2026-0001</b> | Tarih: <span id="proformaDate"></span></span>
+            </div>
+            <div style="text-align: right;">
+                <h3 style="font-size: 1.1rem; color: var(--primary);" id="proformaCustomerName">Atlas Teknoloji A.Ş.</h3>
+                <span style="font-size: 0.8rem; color: #64748b;" id="proformaCustomerVkn">VKN: 1234567890</span>
+            </div>
+        </div>
+
+        <table class="proforma-table">
+            <thead>
+                <tr>
+                    <th>Sıra</th>
+                    <th>Ürün / Hizmet Açıklaması</th>
+                    <th>Miktar</th>
+                    <th>Birim Fiyat</th>
+                    <th>KDV Oranı</th>
+                    <th>Toplam Tutar</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1</td>
+                    <td id="proformaItemName">E-İmza & USB Token (3 Yıllık Lisans)</td>
+                    <td id="proformaItemQty">1 Adet</td>
+                    <td id="proformaItemPrice">2.450,00 TL</td>
+                    <td>%20</td>
+                    <td id="proformaItemTotal">2.450,00 TL</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div style="display: flex; justify-content: flex-end; margin: 20px 0;">
+            <div style="width: 280px; font-size: 0.9rem; line-height: 1.8;">
+                <div style="display: flex; justify-content: space-between;"><span>Ara Toplam:</span> <b id="proformaSubtotal">2.450,00 TL</b></div>
+                <div style="display: flex; justify-content: space-between;"><span>KDV (%20):</span> <b id="proformaVat">490,00 TL</b></div>
+                <div style="display: flex; justify-content: space-between; font-size: 1.15rem; color: var(--primary); border-top: 1px solid #e2e8f0; padding-top: 6px;">
+                    <span>Genel Toplam:</span> <b id="proformaTotal">2.940,00 TL</b>
+                </div>
+            </div>
+        </div>
+
+        <div style="border-top: 1px dashed var(--border); padding-top: 16px; font-size: 0.8rem; color: #64748b; margin-bottom: 24px;">
+            <b>Teslim ve Ödeme Şartları:</b> İşbu proforma teklif 15 gün geçerlidir. Ödeme onayı akabinde dijital sertifika ve lisans aktivasyonu aynı iş günü içinde gerçekleştirilir.
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+            <button class="btn-wa" id="waBtn" target="_blank">
+                <span>💬 Teklifi WhatsApp Satış Ekibine İlet</span>
+            </button>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn-qty" style="width: auto; padding: 10px 16px;" onclick="window.print()">🖨️ Yazdır / PDF İndir</button>
+                <button class="btn-qty" style="width: auto; padding: 10px 16px;" onclick="location.reload()">➕ Yeni Teklif</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentPrice = 2450;
+let currentProductName = "E-İmza & USB Token (3 Yıllık Lisans)";
+
+function selectProduct(el, id, price, name) {
+    document.querySelectorAll('.product-option').forEach(o => o.classList.remove('selected'));
+    el.classList.add('selected');
+    currentPrice = price;
+    currentProductName = name;
+    updateCalculation();
+}
+
+function changeQty(delta) {
+    const input = document.getElementById('qtyInput');
+    let v = parseInt(input.value) || 1;
+    v = Math.max(1, v + delta);
+    input.value = v;
+    updateCalculation();
+}
+
+function updateCalculation() {
+    const qty = parseInt(document.getElementById('qtyInput').value) || 1;
+    const payment = document.getElementById('paymentTerm').value;
+
+    let subtotal = currentPrice * qty;
+    let discount = 0;
+
+    if (payment === 'pesin') {
+        discount = subtotal * 0.05;
+        document.getElementById('discountRow').style.display = 'flex';
+        document.getElementById('summaryDiscount').innerText = `-${formatMoney(discount)} TL`;
+    } else {
+        document.getElementById('discountRow').style.display = 'none';
+    }
+
+    const netSubtotal = subtotal - discount;
+    const vat = netSubtotal * 0.20;
+    const grandTotal = netSubtotal + vat;
+
+    document.getElementById('summaryProductName').innerText = currentProductName;
+    document.getElementById('summaryUnitPrice').innerText = `${formatMoney(currentPrice)} TL`;
+    document.getElementById('summaryQty').innerText = `${qty} Adet`;
+    document.getElementById('summarySubtotal').innerText = `${formatMoney(subtotal)} TL`;
+    document.getElementById('summaryVat').innerText = `${formatMoney(vat)} TL`;
+    document.getElementById('summaryGrandTotal').innerText = `${formatMoney(grandTotal)} TL`;
+}
+
+function formatMoney(num) {
+    return num.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+async function submitQuote(e) {
+    e.preventDefault();
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.innerText = '⏳ Hazırlanıyor...';
+
+    const qty = parseInt(document.getElementById('qtyInput').value) || 1;
+    const payment = document.getElementById('paymentTerm').value;
+    const discount = (payment === 'pesin') ? (currentPrice * qty * 0.05) : 0;
+    const net = (currentPrice * qty) - discount;
+    const vat = net * 0.20;
+    const total = net + vat;
+
+    const payload = {
+        company_name: document.getElementById('companyName').value.trim(),
+        vkn: document.getElementById('vkn').value.trim(),
+        contact_name: document.getElementById('contactName').value.trim(),
+        email: document.getElementById('email').value.trim(),
+        phone: document.getElementById('phone').value.trim(),
+        city: document.getElementById('city').value.trim(),
+        payment_term: payment,
+        notes: document.getElementById('notes').value.trim(),
+        product_name: currentProductName,
+        unit_price: currentPrice,
+        qty: qty,
+        subtotal: net,
+        vat: vat,
+        grand_total: total,
+        created_at: new Date().toISOString()
+    };
+
+    let quoteNo = 'TEKLIF-2026-' + Math.floor(1000 + Math.random() * 9000);
+
+    try {
+        const res = await fetch('/api/teklif-olustur', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+            const data = await res.json();
+            if (data.quote_no) quoteNo = data.quote_no;
+        }
+    } catch (err) {
+        const local = JSON.parse(localStorage.getItem('kobi_quotes') || '[]');
+        payload.quote_no = quoteNo;
+        local.push(payload);
+        localStorage.setItem('kobi_quotes', JSON.stringify(local));
+    }
+
+    // Proforma görünümünü doldur
+    document.getElementById('quoteForm').style.display = 'none';
+    const pv = document.getElementById('proformaView');
+    pv.style.display = 'block';
+
+    document.getElementById('proformaNo').innerText = quoteNo;
+    document.getElementById('proformaDate').innerText = new Date().toLocaleDateString('tr-TR');
+    document.getElementById('proformaCustomerName').innerText = payload.company_name;
+    document.getElementById('proformaCustomerVkn').innerText = `VKN/TCKN: ${payload.vkn} | Yetkili: ${payload.contact_name}`;
+
+    document.getElementById('proformaItemName').innerText = payload.product_name;
+    document.getElementById('proformaItemQty').innerText = `${payload.qty} Adet`;
+    document.getElementById('proformaItemPrice').innerText = `${formatMoney(payload.unit_price)} TL`;
+    document.getElementById('proformaItemTotal').innerText = `${formatMoney(payload.subtotal)} TL`;
+
+    document.getElementById('proformaSubtotal').innerText = `${formatMoney(payload.subtotal)} TL`;
+    document.getElementById('proformaVat').innerText = `${formatMoney(payload.vat)} TL`;
+    document.getElementById('proformaTotal').innerText = `${formatMoney(payload.grand_total)} TL`;
+
+    // WhatsApp Mesaj Linki
+    const waText = encodeURIComponent(
+        `Merhaba, ${payload.company_name} adına '${quoteNo}' numaralı proforma teklifimizi aldık. Toplam Tutar: ${formatMoney(payload.grand_total)} TL (${payload.product_name}). Satın alma süreci ve onay için görüşmek istiyoruz.`
+    );
+    const waBtn = document.getElementById('waBtn');
+    waBtn.onclick = () => window.open(`https://wa.me/905551234567?text=${waText}`, '_blank');
+}
+
+window.onload = updateCalculation;
+</script>
+
+</body>
+</html>

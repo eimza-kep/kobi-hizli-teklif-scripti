@@ -47,6 +47,18 @@ python server.py
 
 ---
 
+## 🌐 KOBİ & E-Dönüşüm Açık Kaynak Ekosistemi
+
+Bu teklif motoru, [@eimza-kep](https://github.com/eimza-kep) açık kaynak ekosisteminin satış ve teklif otomasyon modülüdür. İlgili diğer araçlar:
+
+* 🏢 [kobi-finans-yonetim-excel-sablonlari](https://github.com/eimza-kep/kobi-finans-yonetim-excel-sablonlari) - Proforma fatura, nakit akışı ve başabaş analizi Excel şablonları.
+* 📄 [e-fatura-xml-goruntuleyici](https://github.com/eimza-kep/e-fatura-xml-goruntuleyici) - Onaylanan tekliflerin e-Fatura/e-Arşiv XML çıktısını görüntüleme ve doğrulama.
+* 📦 [kobi-tedarikci-teklif-toplama-scripti](https://github.com/eimza-kep/kobi-tedarikci-teklif-toplama-scripti) - Satın alma ve tedarikçilerden karşılaştırmalı teklif toplama portalı.
+* 🌟 [awesome-turkiye-e-donusum](https://github.com/eimza-kep/awesome-turkiye-e-donusum) - Türkiye e-Dönüşüm açık kaynak araçları ve kütüphaneleri kürasyonu.
+
+---
+
 ## 📜 Lisans
 
 Bu proje [MIT Lisansı](LICENSE) ile lisanslanmıştır. Kurumsal ve ticari amaçlarla tamamen serbestçe kullanılabilir.
+

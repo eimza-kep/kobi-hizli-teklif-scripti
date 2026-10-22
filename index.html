@@ -328,9 +328,11 @@
             <button class="btn-wa" id="waBtn" target="_blank">
                 <span>💬 Teklifi WhatsApp Satış Ekibine İlet</span>
             </button>
-            <div style="display: flex; gap: 10px;">
-                <button class="btn-qty" style="width: auto; padding: 10px 16px;" onclick="window.print()">🖨️ Yazdır / PDF İndir</button>
-                <button class="btn-qty" style="width: auto; padding: 10px 16px;" onclick="location.reload()">➕ Yeni Teklif</button>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button type="button" class="btn-qty" style="width: auto; padding: 10px 16px; background: #0284c7; color: white;" onclick="openProformaPage()">📄 Proforma A4 Sayfası</button>
+                <button type="button" class="btn-qty" style="width: auto; padding: 10px 16px; background: #10b981; color: white;" onclick="downloadUblXml()">📥 UBL e-Fatura XML</button>
+                <button type="button" class="btn-qty" style="width: auto; padding: 10px 16px;" onclick="window.print()">🖨️ Yazdır / PDF İndir</button>
+                <button type="button" class="btn-qty" style="width: auto; padding: 10px 16px;" onclick="location.reload()">➕ Yeni Teklif</button>
             </div>
         </div>
     </div>
@@ -339,6 +341,23 @@
 <script>
 let currentPrice = 2450;
 let currentProductName = "E-İmza & USB Token (3 Yıllık Lisans)";
+let currentQuoteNo = "";
+
+function openProformaPage() {
+    if (currentQuoteNo) {
+        window.open(`/api/proforma-html?quote_no=${encodeURIComponent(currentQuoteNo)}`, '_blank');
+    } else {
+        window.print();
+    }
+}
+
+function downloadUblXml() {
+    if (currentQuoteNo) {
+        window.location.href = `/api/export-ubl-xml?quote_no=${encodeURIComponent(currentQuoteNo)}`;
+    } else {
+        alert("Teklif numarası henüz oluşturulmadı.");
+    }
+}
 
 function selectProduct(el, id, price, name) {
     document.querySelectorAll('.product-option').forEach(o => o.classList.remove('selected'));
@@ -436,6 +455,8 @@ async function submitQuote(e) {
         local.push(payload);
         localStorage.setItem('kobi_quotes', JSON.stringify(local));
     }
+
+    currentQuoteNo = quoteNo;
 
     // Proforma görünümünü doldur
     document.getElementById('quoteForm').style.display = 'none';

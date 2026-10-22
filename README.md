@@ -3,47 +3,120 @@
 [![CI](https://github.com/eimza-kep/kobi-hizli-teklif-scripti/actions/workflows/ci.yml/badge.svg)](https://github.com/eimza-kep/kobi-hizli-teklif-scripti/actions/workflows/ci.yml)
 [![Canlı Demo](https://img.shields.io/badge/Demo-Canl%C4%B1%20Test%20Et-brightgreen.svg)](https://eimza-kep.github.io/kobi-hizli-teklif-scripti/)
 [![Lisans: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![UBL-TR](https://img.shields.io/badge/e--Fatura%20UBL--TR-2.1%20Uyumlu-blue)](#)
 [![Kurulum Süresi](https://img.shields.io/badge/Kurulum-1%20Dakika-brightgreen)](#)
 [![Bağımlılık](https://img.shields.io/badge/ba%C4%9F%C4%B1ml%C4%B1l%C4%B1k-0%20(S%C4%B1f%C4%B1r)-blue)](#)
 
-KOBİ'lerin, B2B ticaret yapan firmaların, ajansların, toptancıların ve yazılım şirketlerinin web sitelerine **1 dakikada kurabileceği**, dinamik sepet/miktar hesaplayıcılı, yazdırılabilir proforma çıktılı ve WhatsApp entegrasyonlu **Kurumsal Fiyat Teklifi (RFQ) Scripti**.
+KOBİ'lerin, B2B ticaret yapan firmaların, ajansların, toptancıların ve bilişim/yazılım şirketlerinin web sitelerine **1 dakikada kurabileceği**, dinamik sepet/miktar hesaplayıcılı, **GİB UBL-TR 2.1 e-Fatura XML taslak ihracı**, **kurumsal logo & IBAN destekli A4 Proforma Fatura çıktısı**, CRM yönetim paneli ve tek tıkla WhatsApp satış entegrasyonu sunan **Kurumsal Fiyat Teklifi (RFQ) Scripti**.
 
 ---
 
-## 🌟 Temel Özellikler
+## 🌟 Temel Yetenekler & Özellikler
 
-1. **Dinamik Fiyat ve KDV Hesaplama:**
-   - Ürün/hizmet seçimi, miktar artırma/azaltma, peşin havale iskontosu (%5) ve yasal %20 KDV hesabı anlık olarak çalışır.
-2. **Resmi Proforma Fatura / Teklif Çıktısı:**
-   - Form gönderildiğinde teklif numarası (Örn: `TEKLIF-2026-4819`) atanır ve müşteri anında profesyonel, yazdırılabilir veya PDF olarak kaydedilebilir proforma teklif belgesine ulaşır.
-3. **Tek Tıkla WhatsApp Satış Hattı Entegrasyonu:**
-   - Müşteri oluşturulan teklifi doğrudan tek tuşla şirketinizin WhatsApp kurumsal hattına gönderebilir.
-4. **CRM Yönetim Paneli (`admin.html`):**
-   - Gelen teklif taleplerini listeleme, arama ve durum güncelleme (`Yeni Talep` -> `Teklif İletildi` -> `Satışa Döndü` -> `İptal`).
-   - Toplam potansiyel ciro takibi ve tek tıkla Excel/CSV dökümü alma.
-5. **Çift Arka Uç Desteği:**
-   - **cPanel / Paylaşımlı Hosting:** Doğrudan `api.php` üzerinden JSON depolama.
-   - **VPS / Yerel:** Python `server.py` ve yerleşik SQLite veritabanı.
-   - **Statik:** Sunucusuz doğrudan tarayıcı hafızasıyla (`localStorage`) çalışabilir.
+1. **GİB UBL-TR 2.1 e-Fatura XML Taslağı Dışa Aktarımı:**
+   - Onaylanan veya talep edilen teklifleri uluslararası ve Gelir İdaresi Başkanlığı (GİB) standardı olan **UBL-TR 2.1 TICARIFATURA / SATIS** XML formatına dönüştürür.
+   - Doğrudan özel entegratörlere veya [e-fatura-xml-goruntuleyici](https://github.com/eimza-kep/e-fatura-xml-goruntuleyici) sistemine aktarılabilir.
+2. **Kurumsal Proforma Fatura & Yazdır / PDF İndirme:**
+   - Şirket logosu, resmi unvan, VKN/vergi dairesi, banka adı ve IBAN bilgilerini içeren A4 formatında profesyonel proforma fatura oluşturur.
+   - Yazdırma modu (`@media print`) optimize edilmiştir; tek tıkla doğrudan PDF olarak kaydedilebilir.
+3. **Dinamik Fiyat, İskonto ve KDV Hesaplama:**
+   - Ürün/paket seçimi, dinamik miktar çarpanı, peşin ödeme iskontosu (%5) ve yasal %20 KDV hesabı anlık olarak çalışır.
+4. **CRM & Talep Yönetim Paneli (`admin.html`):**
+   - Teklif taleplerini listeleme, arama ve durum güncelleme (`Yeni Talep` ➔ `Teklif İletildi` ➔ `Satışa Döndü` ➔ `İptal`).
+   - Şirket ve fatura ayarları modalı (`⚙️ Şirket & Fatura Ayarları`) ile unvan, VKN, IBAN ve logo URL dinamik olarak yönetilir.
+   - Toplam potansiyel ciro takibi ve tek tıkla CSV/Excel dökümü.
+5. **WhatsApp Kurumsal Satış Hattı Entegrasyonu:**
+   - Teklif özeti ve tutarı formatlanarak tek tıkla kurumsal WhatsApp hattına iletilir.
+6. **Esnek Çoklu Dağıtım Mimarisi:**
+   - **Python (Önerilen):** Sıfır ek paket bağımlılığı ile yerleşik SQLite ve dahili HTTP sunucu (`python server.py`).
+   - **Docker:** `docker compose up -d` ile izole ve üretime hazır konteyner.
+   - **cPanel / Paylaşımlı Hosting:** Apache ve PHP (`api.php`) ile JSON tabanlı depolama.
+   - **Statik / GitHub Pages:** Sunucu olmaksızın tarayıcı yerel depolaması (`localStorage`) ile bağımsız çalışma.
 
 ---
 
-## 🚀 1 Dakikada Hızlı Kurulum
+## 🚀 Kurulum ve Çalıştırma Rehberi
 
-### 1. Windows'ta Tek Tıkla Çalıştırma (Test & Demo)
-Klasördeki **`Baslat.bat`** dosyasına çift tıklayın! Yerel sunucu otomatik başlar ve tarayıcınızda form açılır.
+### Yöntem 1: Python Sunucusu ile Çalıştırma (Sıfır Bağımlılık)
 
-### 2. Paylaşımlı Hosting / cPanel (Apache & PHP)
-1. Dosyaları zip olarak indirin.
-2. Sitenizin `public_html/teklif` dizinine yükleyin.
-3. `https://siteniz.com/teklif/` adresinden doğrudan kullanın!
+Ek kütüphane (`pip install`) gerektirmez; standart Python 3.8+ kütüphaneleriyle çalışır:
 
-### 3. Python Sunucusu ile Çalıştırma
 ```bash
+# Depoyu klonlayın
+git clone https://github.com/eimza-kep/kobi-hizli-teklif-scripti.git
+cd kobi-hizli-teklif-scripti
+
+# Sunucuyu başlatın
 python server.py
 ```
-- Müşteri Teklif Formu: `http://localhost:8081/index.html`
-- CRM Yönetim Paneli: `http://localhost:8081/admin.html`
+
+- **Müşteri Teklif Portalı:** [http://localhost:8081/index.html](http://localhost:8081/index.html)
+- **Yönetici Paneli:** [http://localhost:8081/admin.html](http://localhost:8081/admin.html)
+- **Sağlık Kontrolü:** [http://localhost:8081/health](http://localhost:8081/health)
+
+*(Windows kullanıcıları doğrudan klasördeki **`Baslat.bat`**, Linux/macOS kullanıcıları **`./baslat.sh`** çalıştırabilir).*
+
+---
+
+### Yöntem 2: Docker ile Çalıştırma
+
+```bash
+# Docker imajını oluşturup çalıştırın
+docker build -t kobi-teklif .
+docker run -d -p 8081:8081 -v $(pwd)/data:/app/data --name kobi-teklif-app kobi-teklif
+```
+
+---
+
+### Yöntem 3: cPanel / Paylaşımlı Hosting (PHP & Apache)
+
+1. Depo dosyalarını zip olarak indirin.
+2. cPanel Dosya Yöneticisi ile `public_html/teklif` klasörüne yükleyin ve çıkartın.
+3. `api.php` dosyasının bulunduğu dizine yazma izni (CHMOD 755 / 775) verin.
+4. `https://siteniz.com/teklif/` adresinden doğrudan kullanın.
+
+---
+
+## 🔌 REST API Uç Noktaları
+
+| Metot | Uç Nokta | Açıklama |
+| :--- | :--- | :--- |
+| `POST` | `/api/teklif-olustur` | Yeni müşteri teklif talebini SQLite'a kaydeder ve `quote_no` döner. |
+| `GET` | `/api/teklif-listesi` | Tüm gelen teklif kayıtlarını JSON dizisi olarak listeler. |
+| `GET` | `/api/export-ubl-xml?quote_no=...` | Belirtilen teklifi GİB UBL-TR 2.1 formatında `.xml` dosyası olarak indirir. |
+| `POST` | `/api/export-ubl-xml` | Gönderilen teklif JSON gövdesini doğrudan UBL-TR XML'e dönüştürür. |
+| `GET` | `/api/proforma-html?quote_no=...` | Yazdırılabilir A4 Proforma Fatura HTML sayfasını üretir. |
+| `GET` | `/api/ayarlar` | Mevcut şirket unvanı, VKN, IBAN ve logo ayarlarını döner. |
+| `POST` | `/api/ayarlar` | Şirket unvanı, VKN, IBAN ve logo ayarlarını SQLite'a kaydeder. |
+| `GET` | `/health` | Servis sağlık durumunu (`status: healthy`) döner. |
+
+---
+
+## 🧪 Birim ve Entegrasyon Testleri
+
+Tüm veritabanı CRUD işlemleri, KDV hesaplamaları, UBL-TR XML şema doğrulaması ve HTML proforma şablonu birim testlerle korunmaktadır:
+
+```bash
+python scripts/test_teklif.py
+```
+
+Çıktı Örneği:
+```text
+============================================================
+  KOBİ FİYAT TEKLİFİ & UBL XML TEST SÜİTİ
+============================================================
+test_company_settings ... ok
+test_database_initialization ... ok
+test_generate_proforma_html ... ok
+test_generate_ubl_invoice_xml ... ok
+test_quote_calculations_and_insertion ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.010s
+
+OK
+✅ TÜM TESTLER BAŞARIYLA GEÇTİ!
+```
 
 ---
 
@@ -52,7 +125,7 @@ python server.py
 Bu teklif motoru, [@eimza-kep](https://github.com/eimza-kep) açık kaynak ekosisteminin satış ve teklif otomasyon modülüdür. İlgili diğer araçlar:
 
 * 🏢 [kobi-finans-yonetim-excel-sablonlari](https://github.com/eimza-kep/kobi-finans-yonetim-excel-sablonlari) - Proforma fatura, nakit akışı ve başabaş analizi Excel şablonları.
-* 📄 [e-fatura-xml-goruntuleyici](https://github.com/eimza-kep/e-fatura-xml-goruntuleyici) - Onaylanan tekliflerin e-Fatura/e-Arşiv XML çıktısını görüntüleme ve doğrulama.
+* 📄 [e-fatura-xml-goruntuleyici](https://github.com/eimza-kep/e-fatura-xml-goruntuleyici) - Onaylanan tekliflerin e-Fatura/e-Arşiv UBL-TR XML çıktısını görüntüleme ve doğrulama.
 * 📦 [kobi-tedarikci-teklif-toplama-scripti](https://github.com/eimza-kep/kobi-tedarikci-teklif-toplama-scripti) - Satın alma ve tedarikçilerden karşılaştırmalı teklif toplama portalı.
 * 🌟 [awesome-turkiye-e-donusum](https://github.com/eimza-kep/awesome-turkiye-e-donusum) - Türkiye e-Dönüşüm açık kaynak araçları ve kütüphaneleri kürasyonu.
 
@@ -61,4 +134,3 @@ Bu teklif motoru, [@eimza-kep](https://github.com/eimza-kep) açık kaynak ekosi
 ## 📜 Lisans
 
 Bu proje [MIT Lisansı](LICENSE) ile lisanslanmıştır. Kurumsal ve ticari amaçlarla tamamen serbestçe kullanılabilir.
-

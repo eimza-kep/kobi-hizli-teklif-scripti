@@ -21,6 +21,8 @@ from server import init_db, DB_FILE, get_company_settings, save_company_settings
 from scripts.ubl_invoice_generator import (
     generate_ubl_invoice_xml,
     generate_proforma_html,
+    calculate_quote_financials,
+    TEVKIFAT_RATES,
     DEFAULT_SUPPLIER
 )
 
@@ -177,6 +179,119 @@ class TestKobiTeklif(unittest.TestCase):
         self.assertIn("TR00 0015 0000 0000 1122 3344 55", html)
         self.assertIn("Test E-İmza Merkezi", html)
         self.assertIn("brand.png", html)
+
+    def test_calculate_quote_financials_standard(self):
+        fin = calculate_quote_financials(unit_price=1000.0, qty=2, discount_rate=0.10, vat_rate=0.20)
+        self.assertEqual(fin["gross_total"], 2000.00)
+        self.assertEqual(fin["total_discount"], 200.00)
+        self.assertEqual(fin["subtotal"], 1800.00)
+        self.assertEqual(fin["calculated_vat"], 360.00)
+        self.assertFalse(fin["is_withholding"])
+        self.assertEqual(fin["payable_vat"], 360.00)
+        self.assertEqual(fin["grand_total"], 2160.00)
+        self.assertEqual(fin["payable_amount"], 2160.00)
+
+    def test_calculate_quote_financials_withholding_5_10(self):
+        # 10.000 TL matrah, %20 KDV = 2.000 TL. 5/10 tevkifat = 1.000 TL kesinti, 1.000 TL ödenecek KDV.
+        fin = calculate_quote_financials(unit_price=10000.0, qty=1, withholding_rate="5/10")
+        self.assertEqual(fin["subtotal"], 10000.00)
+        self.assertEqual(fin["calculated_vat"], 2000.00)
+        self.assertTrue(fin["is_withholding"])
+        self.assertEqual(fin["withholding_code"], "601")
+        self.assertEqual(fin["withholding_amount"], 1000.00)
+        self.assertEqual(fin["payable_vat"], 1000.00)
+        self.assertEqual(fin["grand_total"], 12000.00)
+        self.assertEqual(fin["payable_amount"], 11000.00)
+
+    def test_calculate_quote_financials_withholding_9_10(self):
+        # 9/10 tevkifat
+        fin = calculate_quote_financials(unit_price=5000.0, qty=2, withholding_rate="9/10")
+        # Matrah = 10000 TL, KDV = 2000 TL. 9/10 = 1800 TL tevkifat, 200 TL ödenecek KDV.
+        self.assertEqual(fin["subtotal"], 10000.00)
+        self.assertEqual(fin["calculated_vat"], 2000.00)
+        self.assertEqual(fin["withholding_code"], "602")
+        self.assertEqual(fin["withholding_amount"], 1800.00)
+        self.assertEqual(fin["payable_vat"], 200.00)
+        self.assertEqual(fin["payable_amount"], 10200.00)
+
+    def test_multi_items_calculation(self):
+        items = [
+            {"name": "E-İmza 3 Yıl", "unit_price": 2450.0, "qty": 2, "discount_rate": 0.0}, # 4900
+            {"name": "USB Token", "unit_price": 500.0, "qty": 2, "discount_rate": 0.10}      # 1000 - 100 = 900
+        ]
+        fin = calculate_quote_financials(items_data=items, withholding_rate="7/10")
+        self.assertEqual(fin["line_count"], 2)
+        self.assertEqual(fin["gross_total"], 5900.00)
+        self.assertEqual(fin["total_discount"], 100.00)
+        self.assertEqual(fin["subtotal"], 5800.00)
+        self.assertEqual(fin["calculated_vat"], 1160.00) # 5800 * 0.20
+        # 7/10 tevkifat = 1160 * 7 / 10 = 812.00
+        self.assertEqual(fin["withholding_amount"], 812.00)
+        self.assertEqual(fin["payable_vat"], 348.00)
+        self.assertEqual(fin["payable_amount"], 6148.00)
+
+    def test_ubl_xml_tevkifat_invoice(self):
+        quote_tevkifat = {
+            "quote_no": "TEKLIF-2026-TEV01",
+            "company_name": "Tevkifatlı Danışmanlık A.Ş.",
+            "vkn": "5544332211",
+            "city": "İstanbul",
+            "unit_price": 20000.0,
+            "qty": 1,
+            "withholding_rate": "5/10",
+            "product_name": "Kurumsal ERP Danışmanlığı"
+        }
+        xml_output = generate_ubl_invoice_xml(quote_tevkifat)
+        root = ET.fromstring(xml_output)
+
+        namespaces = {
+            'ubl': 'urn:oasis:names:specification:ubl:schema:xsd:Invoice-2',
+            'cac': 'urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2',
+            'cbc': 'urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2'
+        }
+
+        invoice_type = root.find('cbc:InvoiceTypeCode', namespaces)
+        self.assertIsNotNone(invoice_type)
+        self.assertEqual(invoice_type.text, "TEVKIFAT")
+
+        # WithholdingTaxTotal kontrolü
+        withholding_tax = root.find('cac:WithholdingTaxTotal', namespaces)
+        self.assertIsNotNone(withholding_tax, "WithholdingTaxTotal etiketi bulunamadi.")
+        w_amt = withholding_tax.find('cbc:TaxAmount', namespaces)
+        self.assertEqual(w_amt.text, "2000.00") # 20000 * 0.20 * 5/10 = 2000.00
+
+        payable = root.find('cac:LegalMonetaryTotal/cbc:PayableAmount', namespaces)
+        self.assertEqual(payable.text, "22000.00") # Matrah(20000) + Tahsil(2000) = 22000.00
+
+    def test_database_migration_columns_and_insertion(self):
+        quote_no = "TEKLIF-2026-TEST_MIGRATION"
+        with sqlite3.connect(DB_FILE) as conn:
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM quotes WHERE quote_no = ?", (quote_no,))
+            cursor.execute("""
+                INSERT INTO quotes (
+                    quote_no, company_name, vkn, contact_name,
+                    unit_price, qty, subtotal, vat, grand_total,
+                    discount_rate, discount_amount, withholding_rate,
+                    withholding_code, withholding_amount, payable_amount,
+                    items_json, status
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                quote_no, "Modern A.Ş.", "9988776655", "Ahmet Bey",
+                5000.0, 2, 9000.0, 1800.0, 10800.0,
+                0.10, 1000.0, "5/10",
+                "601", 900.0, 9900.0,
+                '[{"name":"Paket","qty":2,"unit_price":5000}]', "Teklif İletildi"
+            ))
+            conn.commit()
+
+            cursor.execute("SELECT withholding_rate, withholding_code, payable_amount, status FROM quotes WHERE quote_no = ?", (quote_no,))
+            row = cursor.fetchone()
+            self.assertIsNotNone(row)
+            self.assertEqual(row[0], "5/10")
+            self.assertEqual(row[1], "601")
+            self.assertEqual(row[2], 9900.0)
+            self.assertEqual(row[3], "Teklif İletildi")
 
 if __name__ == "__main__":
     print("=" * 60)

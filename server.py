@@ -22,6 +22,8 @@ if ROOT_DIR not in sys.path:
 from scripts.ubl_invoice_generator import (
     generate_ubl_invoice_xml,
     generate_proforma_html,
+    calculate_quote_financials,
+    TEVKIFAT_RATES,
     DEFAULT_SUPPLIER
 )
 
@@ -52,6 +54,13 @@ def init_db():
                 subtotal REAL,
                 vat REAL,
                 grand_total REAL,
+                discount_rate REAL DEFAULT 0,
+                discount_amount REAL DEFAULT 0,
+                withholding_rate TEXT DEFAULT '',
+                withholding_code TEXT DEFAULT '',
+                withholding_amount REAL DEFAULT 0,
+                payable_amount REAL DEFAULT 0,
+                items_json TEXT DEFAULT '[]',
                 status TEXT DEFAULT 'Yeni Talep',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
@@ -62,6 +71,21 @@ def init_db():
                 value TEXT
             )
         """)
+        # Kolon migrasyonu kontrolü
+        cursor.execute("PRAGMA table_info(quotes)")
+        existing_cols = [r[1] for r in cursor.fetchall()]
+        new_cols = [
+            ("discount_rate", "REAL DEFAULT 0"),
+            ("discount_amount", "REAL DEFAULT 0"),
+            ("withholding_rate", "TEXT DEFAULT ''"),
+            ("withholding_code", "TEXT DEFAULT ''"),
+            ("withholding_amount", "REAL DEFAULT 0"),
+            ("payable_amount", "REAL DEFAULT 0"),
+            ("items_json", "TEXT DEFAULT '[]'")
+        ]
+        for col_name, col_def in new_cols:
+            if col_name not in existing_cols:
+                cursor.execute(f"ALTER TABLE quotes ADD COLUMN {col_name} {col_def}")
         conn.commit()
 
 def get_company_settings():
@@ -112,6 +136,17 @@ class QuoteHandler(SimpleHTTPRequestHandler):
             self.send_header("Content-Type", "application/json; charset=utf-8")
             self.end_headers()
             self.wfile.write(json.dumps(settings, ensure_ascii=False).encode("utf-8"))
+            return
+
+        if parsed.path == "/api/tevkifat-oranlari":
+            rates = {
+                k: {"pay": v[0], "payda": v[1], "code": v[2], "label": v[3]}
+                for k, v in TEVKIFAT_RATES.items()
+            }
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.end_headers()
+            self.wfile.write(json.dumps(rates, ensure_ascii=False).encode("utf-8"))
             return
 
         if parsed.path == "/api/teklif-listesi":
@@ -226,6 +261,56 @@ class QuoteHandler(SimpleHTTPRequestHandler):
             self.wfile.write(xml_str.encode("utf-8"))
             return
 
+        if parsed.path == "/api/calculate-quote":
+            content_length = int(self.headers.get("Content-Length", 0))
+            body = self.rfile.read(content_length).decode("utf-8")
+            try:
+                data = json.loads(body)
+            except Exception:
+                data = {}
+
+            fin = calculate_quote_financials(
+                items_data=data.get("items") or data.get("items_json"),
+                unit_price=float(data.get("unit_price", 0.0) or 0.0),
+                qty=int(data.get("qty", 1) or 1),
+                discount_rate=float(data.get("discount_rate", 0.0) or 0.0),
+                vat_rate=float(data.get("vat_rate", 0.20) or 0.20),
+                withholding_rate=data.get("withholding_rate"),
+                product_name=data.get("product_name", "Standart Hizmet Paketi")
+            )
+
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.end_headers()
+            self.wfile.write(json.dumps(fin, ensure_ascii=False).encode("utf-8"))
+            return
+
+        if parsed.path == "/api/durum-guncelle":
+            content_length = int(self.headers.get("Content-Length", 0))
+            body = self.rfile.read(content_length).decode("utf-8")
+            try:
+                data = json.loads(body)
+            except Exception:
+                data = {}
+
+            quote_no = data.get("quote_no")
+            quote_id = data.get("id")
+            new_status = data.get("status", "Yeni Talep")
+
+            with sqlite3.connect(DB_FILE) as conn:
+                cursor = conn.cursor()
+                if quote_no:
+                    cursor.execute("UPDATE quotes SET status = ? WHERE quote_no = ?", (new_status, quote_no))
+                elif quote_id:
+                    cursor.execute("UPDATE quotes SET status = ? WHERE id = ?", (new_status, quote_id))
+                conn.commit()
+
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.end_headers()
+            self.wfile.write(json.dumps({"success": True, "message": "Teklif durumu güncellendi."}).encode("utf-8"))
+            return
+
         if parsed.path == "/api/teklif-olustur":
             content_length = int(self.headers.get("Content-Length", 0))
             body = self.rfile.read(content_length).decode("utf-8")
@@ -236,14 +321,28 @@ class QuoteHandler(SimpleHTTPRequestHandler):
 
             quote_no = f"TEKLIF-2026-{random.randint(1000, 9999)}"
 
+            fin = calculate_quote_financials(
+                items_data=data.get("items") or data.get("items_json"),
+                unit_price=float(data.get("unit_price", 0.0) or 0.0),
+                qty=int(data.get("qty", 1) or 1),
+                discount_rate=float(data.get("discount_rate", 0.0) or 0.0),
+                vat_rate=float(data.get("vat_rate", 0.20) or 0.20),
+                withholding_rate=data.get("withholding_rate"),
+                product_name=data.get("product_name", "Standart Hizmet Paketi")
+            )
+            items_json_str = json.dumps(fin.get("items", []), ensure_ascii=False)
+
             with sqlite3.connect(DB_FILE) as conn:
                 cursor = conn.cursor()
                 cursor.execute("""
                     INSERT INTO quotes (
                         quote_no, company_name, vkn, contact_name, email,
                         phone, city, payment_term, notes, product_name,
-                        unit_price, qty, subtotal, vat, grand_total
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        unit_price, qty, subtotal, vat, grand_total,
+                        discount_rate, discount_amount, withholding_rate,
+                        withholding_code, withholding_amount, payable_amount,
+                        items_json
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """, (
                     quote_no,
                     data.get("company_name", ""),
@@ -254,12 +353,19 @@ class QuoteHandler(SimpleHTTPRequestHandler):
                     data.get("city", ""),
                     data.get("payment_term", ""),
                     data.get("notes", ""),
-                    data.get("product_name", ""),
-                    float(data.get("unit_price", 0)),
-                    int(data.get("qty", 1)),
-                    float(data.get("subtotal", 0)),
-                    float(data.get("vat", 0)),
-                    float(data.get("grand_total", 0))
+                    data.get("product_name", "Standart Hizmet Paketi"),
+                    float(data.get("unit_price", 0.0) or (fin["items"][0]["unit_price"] if fin["items"] else 0.0)),
+                    int(data.get("qty", 1) or 1),
+                    fin["subtotal"],
+                    fin["calculated_vat"],
+                    fin["grand_total"],
+                    fin["discount_rate"],
+                    fin["total_discount"],
+                    fin["withholding_rate"],
+                    fin["withholding_code"],
+                    fin["withholding_amount"],
+                    fin["payable_amount"],
+                    items_json_str
                 ))
                 conn.commit()
 
@@ -269,6 +375,7 @@ class QuoteHandler(SimpleHTTPRequestHandler):
             resp = {
                 "success": True,
                 "quote_no": quote_no,
+                "financials": fin,
                 "message": "Fiyat teklifi talebiniz başarıyla oluşturuldu."
             }
             self.wfile.write(json.dumps(resp, ensure_ascii=False).encode("utf-8"))

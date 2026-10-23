@@ -185,9 +185,32 @@
                     </div>
                 </div>
 
-                <!-- 2. Şirket & İletişim Bilgileri -->
+                <!-- 2. Vergi ve İskonto Parametreleri (GİB UBL-TR) -->
                 <div class="card">
-                    <h2 class="card-title">🏢 2. Şirket ve Yetkili İletişim Bilgileri</h2>
+                    <h2 class="card-title">⚖️ 2. Vergi & İskonto Tercihleri (Tevkifat / İndirim)</h2>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>KDV Tevkifatı (Tebliğ Kapsamı)</label>
+                            <select id="withholdingSelect" onchange="updateCalculation()">
+                                <option value="">Tevkifat Yok (Normal KDV %20)</option>
+                                <option value="2/10">2/10 - Diğer Hizmetler (Kod: 616)</option>
+                                <option value="3/10">3/10 - Fason Tekstil / Konfeksiyon (Kod: 624)</option>
+                                <option value="4/10">4/10 - Yemek Servis / Organizasyon (Kod: 608)</option>
+                                <option value="5/10">5/10 - Danışmanlık ve Yönetim Hizmeti (Kod: 601)</option>
+                                <option value="7/10">7/10 - Bakım, Onarım ve Montaj (Kod: 604)</option>
+                                <option value="9/10">9/10 - Güvenlik ve Temizlik Hizmetleri (Kod: 602)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Özel İskonto Oranı (%)</label>
+                            <input type="number" id="customDiscountInput" min="0" max="90" value="0" placeholder="0" oninput="updateCalculation()">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. Şirket & İletişim Bilgileri -->
+                <div class="card">
+                    <h2 class="card-title">🏢 3. Şirket ve Yetkili İletişim Bilgileri</h2>
                     <div class="form-grid">
                         <div class="form-group full">
                             <label>Firma Ticari Unvanı <span style="color:red">*</span></label>
@@ -251,16 +274,27 @@
                         <span id="summarySubtotal">2.450,00 TL</span>
                     </div>
                     <div class="summary-item" id="discountRow" style="color: var(--success); display: none;">
-                        <span>Peşin Havale İndirimi (%5):</span>
+                        <span>Uygulanan İskonto:</span>
                         <span id="summaryDiscount">-0,00 TL</span>
                     </div>
                     <div class="summary-item">
                         <span>Hesaplanan KDV (%20):</span>
                         <span id="summaryVat">490,00 TL</span>
                     </div>
+                    <div class="summary-item" id="tevkifatRow" style="color: #b91c1c; display: none;">
+                        <span>KDV Tevkifat Kesintisi:</span>
+                        <span id="summaryTevkifat">-0,00 TL</span>
+                    </div>
+                    <div class="summary-item" id="payableVatRow" style="color: #15803d; display: none;">
+                        <span>Tahsil Edilecek KDV:</span>
+                        <span id="summaryPayableVat">0,00 TL</span>
+                    </div>
                     <div class="summary-total">
-                        <span>Genel Toplam:</span>
+                        <span>Ödenecek Tutar:</span>
                         <span id="summaryGrandTotal" style="color: var(--primary);">2.940,00 TL</span>
+                    </div>
+                    <div id="subGrandTotalRow" style="font-size:0.75rem; color:#64748b; text-align:right; margin-top:4px; display:none;">
+                        KDV Dahil Toplam: <span id="summaryTotalVatIncl">2.940,00 TL</span>
                     </div>
 
                     <button type="submit" class="btn-submit" id="submitBtn">
@@ -311,17 +345,30 @@
         </table>
 
         <div style="display: flex; justify-content: flex-end; margin: 20px 0;">
-            <div style="width: 280px; font-size: 0.9rem; line-height: 1.8;">
-                <div style="display: flex; justify-content: space-between;"><span>Ara Toplam:</span> <b id="proformaSubtotal">2.450,00 TL</b></div>
-                <div style="display: flex; justify-content: space-between;"><span>KDV (%20):</span> <b id="proformaVat">490,00 TL</b></div>
-                <div style="display: flex; justify-content: space-between; font-size: 1.15rem; color: var(--primary); border-top: 1px solid #e2e8f0; padding-top: 6px;">
-                    <span>Genel Toplam:</span> <b id="proformaTotal">2.940,00 TL</b>
+            <div style="width: 320px; font-size: 0.9rem; line-height: 1.8;">
+                <div style="display: flex; justify-content: space-between;"><span>Brüt Tutar:</span> <b id="proformaGross">2.450,00 TL</b></div>
+                <div id="proformaDiscountRow" style="display: none; justify-content: space-between; color: var(--success);">
+                    <span>Uygulanan İskonto:</span> <b id="proformaDiscount">-0,00 TL</b>
+                </div>
+                <div style="display: flex; justify-content: space-between;"><span>KDV Matrahı:</span> <b id="proformaSubtotal">2.450,00 TL</b></div>
+                <div style="display: flex; justify-content: space-between;"><span>Hesaplanan KDV (%20):</span> <b id="proformaVat">490,00 TL</b></div>
+                <div id="proformaTevkifatRow" style="display: none; justify-content: space-between; color: #b91c1c;">
+                    <span>Tevkif Edilen KDV:</span> <b id="proformaTevkifat">-0,00 TL</b>
+                </div>
+                <div id="proformaPayableVatRow" style="display: none; justify-content: space-between; color: #15803d;">
+                    <span>Tahsil Edilecek KDV:</span> <b id="proformaPayableVat">0,00 TL</b>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 1.15rem; color: var(--primary); border-top: 2px solid #e2e8f0; padding-top: 6px; margin-top: 4px;">
+                    <span>Ödenecek Net Tutar:</span> <b id="proformaTotal">2.940,00 TL</b>
+                </div>
+                <div id="proformaGrandTotalRow" style="display: none; font-size: 0.75rem; color: #64748b; text-align: right;">
+                    KDV Dahil Toplam: <span id="proformaGrandTotal">2.940,00 TL</span>
                 </div>
             </div>
         </div>
 
         <div style="border-top: 1px dashed var(--border); padding-top: 16px; font-size: 0.8rem; color: #64748b; margin-bottom: 24px;">
-            <b>Teslim ve Ödeme Şartları:</b> İşbu proforma teklif 15 gün geçerlidir. Ödeme onayı akabinde dijital sertifika ve lisans aktivasyonu aynı iş günü içinde gerçekleştirilir.
+            <b>Teslim ve Ödeme Şartları:</b> İşbu proforma teklif 15 gün geçerlidir. UBL-TR 2.1 e-Fatura / e-Arşiv tevkifat standardına uygundur.
         </div>
 
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
@@ -342,6 +389,16 @@
 let currentPrice = 2450;
 let currentProductName = "E-İmza & USB Token (3 Yıllık Lisans)";
 let currentQuoteNo = "";
+let currentFinancials = null;
+
+const TEVKIFAT_MAP = {
+    "2/10": [2, 10],
+    "3/10": [3, 10],
+    "4/10": [4, 10],
+    "5/10": [5, 10],
+    "7/10": [7, 10],
+    "9/10": [9, 10]
+};
 
 function openProformaPage() {
     if (currentQuoteNo) {
@@ -378,32 +435,74 @@ function changeQty(delta) {
 function updateCalculation() {
     const qty = parseInt(document.getElementById('qtyInput').value) || 1;
     const payment = document.getElementById('paymentTerm').value;
+    const customDiscPct = parseFloat(document.getElementById('customDiscountInput').value) || 0;
+    const withholdingVal = document.getElementById('withholdingSelect').value;
 
-    let subtotal = currentPrice * qty;
-    let discount = 0;
+    const gross = currentPrice * qty;
+    const paymentDiscPct = (payment === 'pesin') ? 5 : 0;
+    const totalDiscPct = Math.min(90, customDiscPct + paymentDiscPct);
+    const discAmount = gross * (totalDiscPct / 100);
+    const matrah = Math.max(0, gross - discAmount);
+    const calculatedVat = matrah * 0.20;
 
-    if (payment === 'pesin') {
-        discount = subtotal * 0.05;
+    let tevkifatAmount = 0;
+    let isWithholding = false;
+    if (withholdingVal && TEVKIFAT_MAP[withholdingVal]) {
+        const [pay, payda] = TEVKIFAT_MAP[withholdingVal];
+        tevkifatAmount = calculatedVat * pay / payda;
+        isWithholding = true;
+    }
+
+    const payableVat = calculatedVat - tevkifatAmount;
+    const grandTotal = matrah + calculatedVat;
+    const payableAmount = matrah + payableVat;
+
+    currentFinancials = {
+        gross_total: gross,
+        discount_rate: totalDiscPct / 100,
+        total_discount: discAmount,
+        subtotal: matrah,
+        calculated_vat: calculatedVat,
+        is_withholding: isWithholding,
+        withholding_rate: withholdingVal,
+        withholding_amount: tevkifatAmount,
+        payable_vat: payableVat,
+        grand_total: grandTotal,
+        payable_amount: payableAmount
+    };
+
+    // UI Güncelleme
+    document.getElementById('summaryProductName').innerText = currentProductName;
+    document.getElementById('summaryUnitPrice').innerText = `${formatMoney(currentPrice)} TL`;
+    document.getElementById('summaryQty').innerText = `${qty} Adet`;
+    document.getElementById('summarySubtotal').innerText = `${formatMoney(matrah)} TL`;
+    document.getElementById('summaryVat').innerText = `${formatMoney(calculatedVat)} TL`;
+
+    if (discAmount > 0) {
         document.getElementById('discountRow').style.display = 'flex';
-        document.getElementById('summaryDiscount').innerText = `-${formatMoney(discount)} TL`;
+        document.getElementById('summaryDiscount').innerText = `-${formatMoney(discAmount)} TL (%${totalDiscPct})`;
     } else {
         document.getElementById('discountRow').style.display = 'none';
     }
 
-    const netSubtotal = subtotal - discount;
-    const vat = netSubtotal * 0.20;
-    const grandTotal = netSubtotal + vat;
+    if (isWithholding) {
+        document.getElementById('tevkifatRow').style.display = 'flex';
+        document.getElementById('summaryTevkifat').innerText = `-${formatMoney(tevkifatAmount)} TL (${withholdingVal})`;
+        document.getElementById('payableVatRow').style.display = 'flex';
+        document.getElementById('summaryPayableVat').innerText = `+${formatMoney(payableVat)} TL`;
+        document.getElementById('subGrandTotalRow').style.display = 'block';
+        document.getElementById('summaryTotalVatIncl').innerText = `${formatMoney(grandTotal)} TL`;
+    } else {
+        document.getElementById('tevkifatRow').style.display = 'none';
+        document.getElementById('payableVatRow').style.display = 'none';
+        document.getElementById('subGrandTotalRow').style.display = 'none';
+    }
 
-    document.getElementById('summaryProductName').innerText = currentProductName;
-    document.getElementById('summaryUnitPrice').innerText = `${formatMoney(currentPrice)} TL`;
-    document.getElementById('summaryQty').innerText = `${qty} Adet`;
-    document.getElementById('summarySubtotal').innerText = `${formatMoney(subtotal)} TL`;
-    document.getElementById('summaryVat').innerText = `${formatMoney(vat)} TL`;
-    document.getElementById('summaryGrandTotal').innerText = `${formatMoney(grandTotal)} TL`;
+    document.getElementById('summaryGrandTotal').innerText = `${formatMoney(payableAmount)} TL`;
 }
 
 function formatMoney(num) {
-    return num.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return Number(num || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 async function submitQuote(e) {
@@ -414,10 +513,9 @@ async function submitQuote(e) {
 
     const qty = parseInt(document.getElementById('qtyInput').value) || 1;
     const payment = document.getElementById('paymentTerm').value;
-    const discount = (payment === 'pesin') ? (currentPrice * qty * 0.05) : 0;
-    const net = (currentPrice * qty) - discount;
-    const vat = net * 0.20;
-    const total = net + vat;
+    const withholdingVal = document.getElementById('withholdingSelect').value;
+
+    const fin = currentFinancials || {};
 
     const payload = {
         company_name: document.getElementById('companyName').value.trim(),
@@ -431,9 +529,12 @@ async function submitQuote(e) {
         product_name: currentProductName,
         unit_price: currentPrice,
         qty: qty,
-        subtotal: net,
-        vat: vat,
-        grand_total: total,
+        discount_rate: fin.discount_rate || 0,
+        withholding_rate: withholdingVal || '',
+        subtotal: fin.subtotal,
+        vat: fin.calculated_vat,
+        grand_total: fin.grand_total,
+        payable_amount: fin.payable_amount,
         created_at: new Date().toISOString()
     };
 
@@ -448,6 +549,7 @@ async function submitQuote(e) {
         if (res.ok) {
             const data = await res.json();
             if (data.quote_no) quoteNo = data.quote_no;
+            if (data.financials) currentFinancials = data.financials;
         }
     } catch (err) {
         const local = JSON.parse(localStorage.getItem('kobi_quotes') || '[]');
@@ -468,18 +570,34 @@ async function submitQuote(e) {
     document.getElementById('proformaCustomerName').innerText = payload.company_name;
     document.getElementById('proformaCustomerVkn').innerText = `VKN/TCKN: ${payload.vkn} | Yetkili: ${payload.contact_name}`;
 
-    document.getElementById('proformaItemName').innerText = payload.product_name;
+    document.getElementById('proformaItemName').innerText = payload.product_name + (fin.discount_rate > 0 ? ` (%${(fin.discount_rate * 100).toFixed(0)} İsk.)` : '');
     document.getElementById('proformaItemQty').innerText = `${payload.qty} Adet`;
     document.getElementById('proformaItemPrice').innerText = `${formatMoney(payload.unit_price)} TL`;
-    document.getElementById('proformaItemTotal').innerText = `${formatMoney(payload.subtotal)} TL`;
+    document.getElementById('proformaItemTotal').innerText = `${formatMoney(fin.subtotal)} TL`;
 
-    document.getElementById('proformaSubtotal').innerText = `${formatMoney(payload.subtotal)} TL`;
-    document.getElementById('proformaVat').innerText = `${formatMoney(payload.vat)} TL`;
-    document.getElementById('proformaTotal').innerText = `${formatMoney(payload.grand_total)} TL`;
+    document.getElementById('proformaGross').innerText = `${formatMoney(fin.gross_total)} TL`;
+    if (fin.total_discount > 0) {
+        document.getElementById('proformaDiscountRow').style.display = 'flex';
+        document.getElementById('proformaDiscount').innerText = `-${formatMoney(fin.total_discount)} TL`;
+    }
+
+    document.getElementById('proformaSubtotal').innerText = `${formatMoney(fin.subtotal)} TL`;
+    document.getElementById('proformaVat').innerText = `${formatMoney(fin.calculated_vat)} TL`;
+
+    if (fin.is_withholding) {
+        document.getElementById('proformaTevkifatRow').style.display = 'flex';
+        document.getElementById('proformaTevkifat').innerText = `-${formatMoney(fin.withholding_amount)} TL (${fin.withholding_rate})`;
+        document.getElementById('proformaPayableVatRow').style.display = 'flex';
+        document.getElementById('proformaPayableVat').innerText = `+${formatMoney(fin.payable_vat)} TL`;
+        document.getElementById('proformaGrandTotalRow').style.display = 'block';
+        document.getElementById('proformaGrandTotal').innerText = `${formatMoney(fin.grand_total)} TL`;
+    }
+
+    document.getElementById('proformaTotal').innerText = `${formatMoney(fin.payable_amount)} TL`;
 
     // WhatsApp Mesaj Linki
     const waText = encodeURIComponent(
-        `Merhaba, ${payload.company_name} adına '${quoteNo}' numaralı proforma teklifimizi aldık. Toplam Tutar: ${formatMoney(payload.grand_total)} TL (${payload.product_name}). Satın alma süreci ve onay için görüşmek istiyoruz.`
+        `Merhaba, ${payload.company_name} adına '${quoteNo}' numaralı proforma teklifimizi aldık. Ödenecek Net Tutar: ${formatMoney(fin.payable_amount)} TL (${payload.product_name}). Satın alma süreci ve onay için görüşmek istiyoruz.`
     );
     const waBtn = document.getElementById('waBtn');
     waBtn.onclick = () => window.open(`https://wa.me/905551234567?text=${waText}`, '_blank');

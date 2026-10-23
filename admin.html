@@ -268,14 +268,27 @@ function renderTable(data) {
         if (q.status === 'Satışa Döndü') badgeClass = 'badge-sold';
         if (q.status === 'Teklif İletildi') badgeClass = 'badge-quoted';
 
+        const hasWithholding = q.withholding_rate && q.withholding_rate !== 'YOK';
+        const withholdingBadge = hasWithholding 
+            ? `<br><span class="badge" style="background:#fee2e2; color:#991b1b; font-size:0.7rem; margin-top:2px;">Tevkifat ${q.withholding_rate}</span>` 
+            : '';
+
+        const payableAmt = (q.payable_amount && q.payable_amount > 0) ? q.payable_amount : q.grand_total;
+        const discountBadge = (q.discount_rate && q.discount_rate > 0)
+            ? `<br><small style="color:#16a34a; font-weight:600;">%${(q.discount_rate * 100).toFixed(0)} İskonto</small>`
+            : '';
+
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td><b>${q.quote_no}</b></td>
+            <td><b>${q.quote_no}</b>${withholdingBadge}</td>
             <td>${q.company_name}</td>
             <td>${q.contact_name}<br><small style="color:#64748b;">${q.phone}</small></td>
-            <td>${q.product_name}</td>
+            <td>${q.product_name}${discountBadge}</td>
             <td>${q.qty} Adet</td>
-            <td><b>${Number(q.grand_total).toLocaleString('tr-TR', {minimumFractionDigits: 2})} TL</b></td>
+            <td>
+                <b>${Number(payableAmt).toLocaleString('tr-TR', {minimumFractionDigits: 2})} TL</b>
+                ${hasWithholding ? `<br><small style="color:#64748b;">KDV Dahil: ${Number(q.grand_total).toLocaleString('tr-TR', {minimumFractionDigits: 2})} TL</small>` : ''}
+            </td>
             <td>
                 <select onchange="updateStatus(${idx}, this.value)" style="padding: 4px 8px; border-radius:6px; border:1px solid #cbd5e1; font-size:0.78rem;">
                     <option value="Yeni Talep" ${q.status === 'Yeni Talep' ? 'selected' : ''}>Yeni Talep</option>
@@ -296,10 +309,23 @@ function renderTable(data) {
     });
 }
 
-function updateStatus(idx, newStatus) {
+async function updateStatus(idx, newStatus) {
     quotes[idx].status = newStatus;
     localStorage.setItem('kobi_quotes', JSON.stringify(quotes));
     updateStats();
+
+    try {
+        await fetch('/api/durum-guncelle', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                quote_no: quotes[idx].quote_no,
+                status: newStatus
+            })
+        });
+    } catch (e) {
+        console.warn("Sunucu durum güncellemesi yapılamadı, yerel hafızaya kaydedildi.", e);
+    }
 }
 
 function openWa(phone, quoteNo, company) {
